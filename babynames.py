@@ -46,13 +46,50 @@ def extract_names(filename):
     ['2006', 'Aaliyah 91', Aaron 57', 'Abagail 895', ' ...]
     """
     names = []
-    # +++your code here+++
+
+    # Open and read the file.
+    f = open(filename, 'r')
+    text = f.read()
+
+    # Get the year.
+    year_match = re.search(r'Popularity\sin\s(\d\d\d\d)', text)
+    if not year_match:
+        # We didn't find a year, so we'll exit with an error message.
+        sys.stderr.write('Couldn\'t find the year!\n')
+        sys.exit(1)
+    year = year_match.group(1)
+    names.append(year)
+
+    # Extract all the data tuples with a findall()
+    # each tuple is: (rank, boy-name, girl-name)
+    tuples = re.findall(r'<td>(\d+)</td><td>(\w+)</td>\<td>(\w+)</td>', text)
+
+    # Store data into a dict using each name as a key and that
+    # name's rank number as the value.
+    # (if the name is already in there, don't add it, since
+    # this new rank will be bigger than the previous rank).
+    names_to_rank = {}
+    for rank_tuple in tuples:
+        (rank, boyname, girlname) = rank_tuple  # unpack the tuple into 3 vars
+        if boyname not in names_to_rank:
+            names_to_rank[boyname] = rank
+        if girlname not in names_to_rank:
+            names_to_rank[girlname] = rank
+
+    # Get the names, sorted in the right order
+    sorted_names = sorted(names_to_rank.keys())
+
+    # Build up result list, one element per line
+    for name in sorted_names:
+        names.append(name + " " + names_to_rank[name])
+
     return names
 
 
 def create_parser():
     """Create a cmd line parser object with 2 argument definitions"""
-    parser = argparse.ArgumentParser(description="Extracts and alphabetizes baby names from html.")
+    parser = argparse.ArgumentParser(
+        description="Extracts and alphabetizes baby names from html.")
     parser.add_argument(
         '--summaryfile', help='creates a summary file', action='store_true')
     # The nargs option instructs the parser to expect 1 or more filenames.
@@ -82,6 +119,18 @@ def main(args):
     # or to write the list to a summary file e.g. `baby1990.html.summary`
 
     # +++your code here+++
+    for filename in file_list:
+        names = extract_names(filename)
+
+        # Make text out of the whole list
+        text = '\n'.join(names)
+
+        if create_summary:
+            outf = open(filename + '.summary', 'w')
+            outf.write(text + '\n')
+            outf.close()
+        else:
+            print(text)
 
 
 if __name__ == '__main__':
